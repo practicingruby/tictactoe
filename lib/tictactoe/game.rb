@@ -1,37 +1,22 @@
 module TicTacToe
   class Game
     def initialize
-      @board   = [[nil,nil,nil],
-                  [nil,nil,nil],
-                  [nil,nil,nil]]
-
+      @board   = TicTacToe::Board.new
       @players = [:X, :O].cycle
     end
 
     attr_reader :board, :players, :current_player
 
     def play
-      start_new_turn
+      catch(:finished) do
+        loop do
+          start_new_turn 
+          show_board
+          move
 
-      loop do
-        display_board
-
-        row, col = move_input
-        next unless valid_move?(row,col) 
-
-        board[row][col] = current_player
-
-        if winning_move?(row, col)
-          puts "#{current_player} wins!"
-          return
+          check_for_win
+          check_for_draw
         end
-
-        if draw? 
-          puts "It's a draw!"
-          return
-        end
-
-        start_new_turn 
       end
     end
 
@@ -39,55 +24,56 @@ module TicTacToe
       @current_player = @players.next
     end
 
-    def display_board
-      puts board.map { |row| row.map { |e| e || " " }.join("|") }.join("\n")
+    def show_board
+      puts board
     end
 
-    def winning_move?(row, col)
-      left_diagonal = [[0,0],[1,1],[2,2]]
-      right_diagonal = [[2,0],[1,1],[0,2]]
+    def game_over
+      throw :finished
+    end
 
-      lines = []
+    def move
+      row, col = move_input
+      board[row, col] = current_player
+    rescue TicTacToe::Board::InvalidRequest => error
+      puts error.message
+      retry
+    end
 
-      [left_diagonal, right_diagonal].each do |line|
-        lines << line if line.include?([row,col])
+    def check_for_win
+      return false unless board.last_move
+
+      win = board.intersecting_lines(*board.last_move).any? do |line|
+        line.all? { |cell| cell == current_player }
       end
 
-      lines << (0..2).map { |c1| [row, c1] }
-      lines << (0..2).map { |r1| [r1, col] }
-
-      lines.any? do |line|
-        line.all? { |row,col| board[row][col] == current_player }
+      if win
+        puts "#{current_player} wins!"
+        game_over
       end
     end
 
-    def draw?
-      board.flatten.compact.length == 9
-    end
-
-    def valid_move?(row,col)
-      begin
-        cell_contents = board.fetch(row).fetch(col)
-      rescue IndexError
-        puts "Out of bounds, try another position"
-        return false
+    def check_for_draw
+      if @board.covered?
+        puts "It's a tie!"
+        game_over
       end
-      
-      if cell_contents
-        puts "Cell occupied, try another position"
-        return false
-      end
-
-      true
     end
 
     def move_input
       print "\n>> "
-      row, col = gets.split.map { |e| e.to_i }
-      puts
+      response = gets
+      
+      case response
+      when /quit/i
+        puts "Wimp!"
+        throw :finished
+      else
+        row, col = response.chomp.split.map { |e| e.to_i }
+        puts
 
-      [row, col]
+        [row, col]
+      end
     end
-
   end
 end
