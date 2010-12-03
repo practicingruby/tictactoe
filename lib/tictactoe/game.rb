@@ -1,17 +1,19 @@
 module TicTacToe
-  module Game
-    extend self
+  class Game
+
+    def initialize
+      @board   = [[nil,nil,nil],
+                  [nil,nil,nil],
+                  [nil,nil,nil]]
+
+      @players = [:X, :O].cycle
+    end
+
+    attr_reader :board, :players
 
     def play
-      board   = [[nil,nil,nil],
-                 [nil,nil,nil],
-                 [nil,nil,nil]]
-
       left_diagonal = [[0,0],[1,1],[2,2]]
       right_diagonal = [[2,0],[1,1],[0,2]]
-
-
-      players = [:X, :O].cycle
 
       current_player = players.next 
 

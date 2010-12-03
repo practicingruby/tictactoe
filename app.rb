@@ -1,3 +1,4 @@
 require_relative "lib/tictactoe"
 
-TicTacToe::Game.play
+game = TicTacToe::Game.new
+game.play
